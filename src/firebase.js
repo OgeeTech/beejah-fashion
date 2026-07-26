@@ -4,15 +4,15 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// Replace these placeholder values with your actual Firebase project config credentials from your Firebase Console
 const firebaseConfig = {
-  apiKey: "AIzaSyD1NTm52z5Lju4KRIckt91dl1XGeCr8p2A",
-  authDomain: "beejah-stitches.firebaseapp.com",
-  projectId: "beejah-stitches",
-  storageBucket: "beejah-stitches.firebasestorage.app",
-  messagingSenderId: "708611868762",
-  appId: "1:708611868762:web:03bc3ad92ad90c9503f063",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
