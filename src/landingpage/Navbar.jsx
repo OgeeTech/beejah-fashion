@@ -106,7 +106,9 @@ const Navbar = ({ onNavigate }) => {
             >
               <Scissors size={20} strokeWidth={2.5} />
             </Flex>
+            {/* Added responsive display to hide text on mobile */}
             <Text
+              display={{ base: "none", md: "block" }}
               fontSize="xl"
               fontWeight="bold"
               letterSpacing="tight"
