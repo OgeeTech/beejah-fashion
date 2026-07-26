@@ -376,14 +376,14 @@ const Catalog = ({ onNavigate }) => {
         py={8}
         pb={{ base: 24, md: 12 }}
       >
-        {/* HERO BANNERS (Split Screen Layout - FULL BACKGROUND COLOR) */}
+        {/* HERO BANNERS (Reduced Height on Mobile) */}
         <Box
           w="full"
-          h={{ base: "650px", md: "450px", lg: "500px" }}
+          h={{ base: "500px", md: "450px", lg: "500px" }} // Reduced mobile height from 650px to 500px
           rounded="none"
           overflow="hidden"
           position="relative"
-          mb={16}
+          mb={{ base: 10, md: 16 }}
         >
           {banners.map((banner, index) => (
             <Flex
@@ -397,11 +397,10 @@ const Catalog = ({ onNavigate }) => {
               opacity={currentSlide === index ? 1 : 0}
               transition="all 0.8s ease-in-out"
               zIndex={currentSlide === index ? 1 : 0}
-              // FULL WIDTH BACKGROUND MOVED HERE
               bg={heroColors[index % heroColors.length]?.light}
               _dark={{ bg: heroColors[index % heroColors.length]?.dark }}
             >
-              {/* TEXT SIDE (Left) - Transparent to let full background show */}
+              {/* TEXT SIDE (Left) */}
               <Flex
                 flex={{ base: "none", md: 1 }}
                 w={{ base: "full", md: "50%" }}
@@ -415,14 +414,14 @@ const Catalog = ({ onNavigate }) => {
                 <VStack
                   align={{ base: "center", md: "flex-start" }}
                   textAlign={{ base: "center", md: "left" }}
-                  gap={5}
+                  gap={{ base: 3, md: 5 }}
                   maxW="lg"
                 >
                   <Heading
                     as="h2"
                     color="gray.900"
                     _dark={{ color: "white" }}
-                    fontSize={{ base: "3xl", md: "4xl", lg: "5xl" }}
+                    fontSize={{ base: "2xl", sm: "3xl", md: "4xl", lg: "5xl" }}
                     fontWeight="extrabold"
                     letterSpacing="tight"
                     lineHeight="1.1"
@@ -432,7 +431,7 @@ const Catalog = ({ onNavigate }) => {
                   <Text
                     color="gray.800"
                     _dark={{ color: "gray.100" }}
-                    fontSize={{ base: "md", md: "lg" }}
+                    fontSize={{ base: "sm", md: "md", lg: "lg" }}
                     fontWeight="medium"
                   >
                     {banner.description}
@@ -440,7 +439,7 @@ const Catalog = ({ onNavigate }) => {
 
                   {/* Clean, contrasting buttons */}
                   <HStack
-                    gap={4}
+                    gap={3}
                     mt={2}
                     flexWrap="wrap"
                     justifyContent={{ base: "center", md: "flex-start" }}
@@ -451,9 +450,9 @@ const Catalog = ({ onNavigate }) => {
                       color="white"
                       _dark={{ bg: "white", color: "gray.900" }}
                       _hover={{ bg: "gray.700", _dark: { bg: "gray.200" } }}
-                      size="lg"
+                      size={{ base: "md", md: "lg" }}
                       rounded="full"
-                      px={8}
+                      px={{ base: 6, md: 8 }}
                       fontWeight="bold"
                     >
                       Shop Now
@@ -468,9 +467,9 @@ const Catalog = ({ onNavigate }) => {
                         bg: "blackAlpha.100",
                         _dark: { bg: "whiteAlpha.200" },
                       }}
-                      size="lg"
+                      size={{ base: "md", md: "lg" }}
                       rounded="full"
-                      px={8}
+                      px={{ base: 6, md: 8 }}
                       fontWeight="bold"
                     >
                       Explore Collection
@@ -479,7 +478,7 @@ const Catalog = ({ onNavigate }) => {
                 </VStack>
               </Flex>
 
-              {/* IMAGE SIDE (Right) - Transparent PNG on top of the background */}
+              {/* IMAGE SIDE (Right) */}
               <Box
                 flex={{ base: "none", md: 1 }}
                 w={{ base: "full", md: "50%" }}
@@ -490,8 +489,8 @@ const Catalog = ({ onNavigate }) => {
                   alt={banner.title}
                   w="full"
                   h="full"
-                  objectFit="contain" // Changed to contain for PNG cutouts
-                  objectPosition="bottom" // Anchors the models to the bottom
+                  objectFit="contain"
+                  objectPosition="bottom"
                 />
               </Box>
             </Flex>
@@ -547,7 +546,7 @@ const Catalog = ({ onNavigate }) => {
         >
           <Heading
             as="h2"
-            fontSize="2xl"
+            fontSize={{ base: "xl", md: "2xl" }}
             color="gray.900"
             _dark={{ color: "white" }}
           >
@@ -567,7 +566,7 @@ const Catalog = ({ onNavigate }) => {
               as="select"
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
-              w="180px"
+              w={{ base: "140px", md: "180px" }}
               p={2}
               rounded="md"
               border="1px solid"
@@ -803,12 +802,12 @@ const Catalog = ({ onNavigate }) => {
           ))
         )}
 
-        {/* TRUST BADGES */}
+        {/* TRUST BADGES (Reduced heights/gaps on mobile) */}
         {!isLoading && filteredAndSortedProducts.length > 0 && (
           <Box
-            mt={20}
-            pt={16}
-            pb={8}
+            mt={{ base: 12, md: 20 }}
+            pt={{ base: 8, md: 16 }}
+            pb={{ base: 4, md: 8 }}
             borderTop="1px solid"
             borderColor="gray.200"
             _dark={{ borderColor: "gray.800" }}
@@ -819,7 +818,7 @@ const Catalog = ({ onNavigate }) => {
                 sm: "repeat(2, 1fr)",
                 md: "repeat(4, 1fr)",
               }}
-              gap={8}
+              gap={{ base: 6, md: 8 }}
             >
               <VStack textAlign="center" gap={3}>
                 <Box color="yellow.600" _dark={{ color: "yellow.400" }}>
