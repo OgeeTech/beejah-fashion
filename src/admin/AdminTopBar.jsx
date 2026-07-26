@@ -76,7 +76,7 @@ const AdminTopBar = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
               _dark={{ color: "white" }}
               lineHeight="shorter"
             >
-              Wada Gift
+              Admin
             </Text>
             <Text fontSize="xs" color="gray.500" _dark={{ color: "gray.400" }}>
               System Admin
