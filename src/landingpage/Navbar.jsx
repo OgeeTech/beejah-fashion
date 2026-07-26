@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Flex,
@@ -8,15 +8,74 @@ import {
   Button,
   Text,
 } from "@chakra-ui/react";
-import { Sun, Moon, User, ShieldAlert, Scissors, Menu, X } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  User,
+  LogOut,
+  ShieldAlert,
+  Scissors,
+  Menu,
+  X,
+} from "lucide-react";
 import { useColorMode } from "../components/ui/color-mode";
 
-// Receive onNavigate as a prop
+// --- NEW FIREBASE IMPORTS ---
+import { auth } from "../firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { toaster } from "../components/ui/toaster"; // Ensure this path matches your project!
+
 const Navbar = ({ onNavigate }) => {
   const { colorMode, toggleColorMode } = useColorMode();
   const [isOpen, setIsOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Listen to Firebase Auth state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe(); // Cleanup listener on unmount
+  }, []);
 
   const navLinks = ["Home", "About", "Catalog"];
+
+  // Protect the Catalog Route
+  const handleProtectedNavigation = (targetPath) => {
+    setIsOpen(false); // Close mobile menu if open
+
+    if (targetPath === "catalog") {
+      if (currentUser) {
+        onNavigate("catalog");
+      } else {
+        toaster.create({
+          title: "Authentication Required",
+          description: "Please sign in to access the catalog.",
+          type: "info",
+          duration: 3000,
+        });
+        onNavigate("signin");
+      }
+    } else {
+      onNavigate(targetPath === "Home" ? "home" : targetPath.toLowerCase());
+    }
+  };
+
+  // Handle Sign In / Sign Out dynamically
+  const handleAuthAction = async () => {
+    setIsOpen(false);
+    if (currentUser) {
+      await signOut(auth);
+      toaster.create({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+        type: "success",
+      });
+      onNavigate("home");
+    } else {
+      onNavigate("signin");
+    }
+  };
 
   return (
     <Box
@@ -35,7 +94,7 @@ const Navbar = ({ onNavigate }) => {
     >
       <Box maxW="7xl" mx="auto" px={{ base: 4, sm: 6, lg: 8 }}>
         <Flex h={16} alignItems="center" justifyContent="space-between">
-          {/* Logo Section - Click to go back home */}
+          {/* Logo Section */}
           <HStack gap={2} cursor="pointer" onClick={() => onNavigate("home")}>
             <Flex
               bg="yellow.400"
@@ -65,15 +124,9 @@ const Navbar = ({ onNavigate }) => {
           <HStack as="nav" gap={8} display={{ base: "none", md: "flex" }}>
             {navLinks.map((item) => (
               <Box
-                as="button" // Changed from "a" to "button"
+                as="button"
                 key={item}
-                onClick={() => {
-                  if (item === "Catalog") {
-                    onNavigate("catalog");
-                  } else {
-                    onNavigate("home");
-                  }
-                }}
+                onClick={() => handleProtectedNavigation(item.toLowerCase())}
                 color="gray.700"
                 _dark={{ color: "gray.200" }}
                 px={3}
@@ -93,7 +146,7 @@ const Navbar = ({ onNavigate }) => {
 
           {/* Right Side Group */}
           <HStack gap={4}>
-            {/* Desktop Action Buttons (Hidden on Mobile) */}
+            {/* Desktop Action Buttons */}
             <HStack display={{ base: "none", md: "flex" }} gap={4}>
               <IconButton
                 aria-label="Toggle dark mode"
@@ -107,6 +160,7 @@ const Navbar = ({ onNavigate }) => {
               </IconButton>
 
               <Button
+                onClick={() => onNavigate("admin-login")}
                 variant="ghost"
                 color="gray.500"
                 _dark={{
@@ -120,17 +174,17 @@ const Navbar = ({ onNavigate }) => {
                 Admin
               </Button>
 
-              {/* DESKTOP SIGN IN BUTTON */}
+              {/* DYNAMIC SIGN IN / SIGN OUT BUTTON */}
               <Button
-                onClick={() => onNavigate("signin")}
-                bg="yellow.400"
-                color="gray.900"
-                _hover={{ bg: "yellow.500" }}
+                onClick={handleAuthAction}
+                bg={currentUser ? "red.500" : "yellow.400"}
+                color={currentUser ? "white" : "gray.900"}
+                _hover={{ bg: currentUser ? "red.600" : "yellow.500" }}
                 fontWeight="semibold"
                 px={4}
               >
-                <User size={18} />
-                Sign In
+                {currentUser ? <LogOut size={18} /> : <User size={18} />}
+                {currentUser ? "Sign Out" : "Sign In"}
               </Button>
             </HStack>
 
@@ -159,18 +213,11 @@ const Navbar = ({ onNavigate }) => {
             <VStack as="nav" gap={2} alignItems="flex-start" mt={2}>
               {navLinks.map((item) => (
                 <Box
-                  as="button" // Changed from "a" to "button"
+                  as="button"
                   key={item}
                   w="full"
                   textAlign="left"
-                  onClick={() => {
-                    setIsOpen(false); // Closes the mobile menu
-                    if (item === "Catalog") {
-                      onNavigate("catalog");
-                    } else {
-                      onNavigate("home");
-                    }
-                  }}
+                  onClick={() => handleProtectedNavigation(item.toLowerCase())}
                   px={3}
                   py={2}
                   rounded="md"
@@ -215,8 +262,11 @@ const Navbar = ({ onNavigate }) => {
               </Box>
 
               <Box
-                as="a"
-                href="#"
+                as="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  onNavigate("admin-login");
+                }}
                 w="full"
                 display="flex"
                 alignItems="center"
@@ -237,22 +287,18 @@ const Navbar = ({ onNavigate }) => {
                 Admin Dashboard
               </Box>
 
-              {/* MOBILE SIGN IN BUTTON */}
               <Button
-                onClick={() => {
-                  setIsOpen(false);
-                  onNavigate("signin");
-                }}
+                onClick={handleAuthAction}
                 w="full"
                 mt={2}
-                bg="yellow.400"
-                color="gray.900"
-                _hover={{ bg: "yellow.500" }}
+                bg={currentUser ? "red.500" : "yellow.400"}
+                color={currentUser ? "white" : "gray.900"}
+                _hover={{ bg: currentUser ? "red.600" : "yellow.500" }}
                 fontWeight="semibold"
                 justifyContent="center"
               >
-                <User size={18} />
-                Sign In
+                {currentUser ? <LogOut size={18} /> : <User size={18} />}
+                {currentUser ? "Sign Out" : "Sign In"}
               </Button>
             </VStack>
           </Box>

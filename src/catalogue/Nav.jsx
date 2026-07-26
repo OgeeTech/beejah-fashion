@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Flex,
@@ -22,21 +22,116 @@ import {
   LogIn,
   Settings,
 } from "lucide-react";
-import { toaster } from "./components/ui/toaster";
-import { useColorMode } from "./components/ui/color-mode";
+import { toaster } from "../components/ui/toaster";
+import { useColorMode } from "../components/ui/color-mode";
 
-const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
+// --- FIREBASE IMPORTS ---
+import { db, auth } from "../firebase";
+import { signOut, onAuthStateChanged } from "firebase/auth";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
+
+const NotificationBadge = ({ count }) => {
+  if (count === undefined || count === null || count === 0) return null;
+  return (
+    <Flex
+      position="absolute"
+      top="-4px"
+      right="-4px"
+      bg="red.500"
+      color="white"
+      fontSize="10px"
+      fontWeight="bold"
+      w="18px"
+      h="18px"
+      rounded="full"
+      alignItems="center"
+      justifyContent="center"
+      border="2px solid"
+      borderColor="white"
+      _dark={{ borderColor: "gray.900" }}
+      zIndex={10}
+    >
+      {count > 99 ? "99+" : count}
+    </Flex>
+  );
+};
+
+const Nav = ({ onNavigate, searchQuery, onSearchChange }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { colorMode, toggleColorMode } = useColorMode();
 
-  const handleLogout = () => {
-    setIsMenuOpen(false);
-    toaster.create({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
-      type: "info",
-      duration: 3000,
+  // --- LIVE FIREBASE STATES ---
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const [favoriteCount, setFavoriteCount] = useState(0);
+
+  // --- DATABASE LISTENERS ---
+  useEffect(() => {
+    let unsubCart = () => {};
+    let unsubFav = () => {};
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(!!user);
+
+      if (user) {
+        // Listen to this specific user's cart
+        const qCart = query(
+          collection(db, "cartItems"),
+          where("userId", "==", user.uid),
+        );
+        unsubCart = onSnapshot(qCart, (snap) => setCartCount(snap.size));
+
+        // Listen to this specific user's favorites
+        const qFav = query(
+          collection(db, "favoriteItems"),
+          where("userId", "==", user.uid),
+        );
+        unsubFav = onSnapshot(qFav, (snap) => setFavoriteCount(snap.size));
+      } else {
+        setCartCount(0);
+        setFavoriteCount(0);
+        unsubCart();
+        unsubFav();
+      }
     });
+
+    return () => {
+      unsubscribeAuth();
+      unsubCart();
+      unsubFav();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    setIsMenuOpen(false);
+    try {
+      await signOut(auth);
+      toaster.create({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+        type: "info",
+      });
+      onNavigate("home");
+    } catch (error) {
+      console.error("Logout Error:", error);
+      toaster.create({
+        title: "Error",
+        description: "Failed to log out.",
+        type: "error",
+      });
+    }
+  };
+
+  const handleRestrictedAction = (actionName) => {
+    if (!isLoggedIn) {
+      toaster.create({
+        title: "Sign In Required",
+        description: `You need to sign in to view your ${actionName}.`,
+        type: "warning",
+      });
+      return;
+    }
+    onNavigate(actionName);
   };
 
   return (
@@ -54,8 +149,11 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
       >
         <Box maxW="7xl" mx="auto" px={6}>
           <Flex h={16} alignItems="center" justifyContent="space-between">
-            {/* Logo */}
-            <HStack gap={2} cursor="pointer" onClick={() => onNavigate("home")}>
+            <HStack
+              gap={2}
+              cursor="pointer"
+              onClick={() => onNavigate("catalog")}
+            >
               <Flex
                 bg="yellow.400"
                 p={2}
@@ -79,7 +177,6 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
               </Text>
             </HStack>
 
-            {/* Search Bar */}
             <Box maxW="md" w="full" px={8}>
               <Flex
                 alignItems="center"
@@ -94,14 +191,29 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
                   variant="unstyled"
                   placeholder="Search catalog..."
                   ml={2}
+                  value={searchQuery || ""}
+                  onChange={(e) =>
+                    onSearchChange && onSearchChange(e.target.value)
+                  }
                   _placeholder={{ color: "gray.500" }}
                 />
               </Flex>
             </Box>
 
-            {/* Desktop Icons Group */}
             <HStack gap={3}>
-              {/* Dark Mode Toggle */}
+              <Text
+                fontWeight="bold"
+                fontSize="sm"
+                color="gray.700"
+                _dark={{ color: "gray.200" }}
+                cursor="pointer"
+                onClick={() => onNavigate("catalog")}
+                _hover={{ color: "yellow.500", _dark: { color: "yellow.400" } }}
+                mr={2}
+              >
+                Catalog
+              </Text>
+
               <IconButton
                 variant="ghost"
                 color="gray.600"
@@ -116,29 +228,34 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
                 {colorMode === "dark" ? <Sun size={20} /> : <Moon size={20} />}
               </IconButton>
 
-              <IconButton
-                variant="ghost"
-                color="gray.600"
-                _dark={{ color: "gray.300" }}
-                onClick={() => onNavigate("favorites")}
-                rounded="full"
-                _hover={{ bg: "gray.100", _dark: { bg: "gray.800" } }}
-              >
-                <Heart size={20} />
-              </IconButton>
+              <Box position="relative">
+                <IconButton
+                  variant="ghost"
+                  color="gray.600"
+                  _dark={{ color: "gray.300" }}
+                  onClick={() => handleRestrictedAction("favorites")}
+                  rounded="full"
+                  _hover={{ bg: "gray.100", _dark: { bg: "gray.800" } }}
+                >
+                  <Heart size={20} />
+                </IconButton>
+                <NotificationBadge count={favoriteCount} />
+              </Box>
 
-              <IconButton
-                variant="ghost"
-                color="gray.600"
-                _dark={{ color: "gray.300" }}
-                onClick={() => onNavigate("cart")}
-                rounded="full"
-                _hover={{ bg: "gray.100", _dark: { bg: "gray.800" } }}
-              >
-                <ShoppingBag size={20} />
-              </IconButton>
+              <Box position="relative">
+                <IconButton
+                  variant="ghost"
+                  color="gray.600"
+                  _dark={{ color: "gray.300" }}
+                  onClick={() => handleRestrictedAction("cart")}
+                  rounded="full"
+                  _hover={{ bg: "gray.100", _dark: { bg: "gray.800" } }}
+                >
+                  <ShoppingBag size={20} />
+                </IconButton>
+                <NotificationBadge count={cartCount} />
+              </Box>
 
-              {/* PREMIUM AVATAR & MODAL */}
               <Box position="relative">
                 <Flex
                   as="button"
@@ -177,7 +294,6 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
                     zIndex={100}
                     overflow="hidden"
                   >
-                    {/* Modal Header */}
                     <Box
                       p={4}
                       bg="gray.50"
@@ -192,7 +308,7 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
                         color="gray.900"
                         _dark={{ color: "white" }}
                       >
-                        {isLoggedIn ? "Wada Gift" : "Guest User"}
+                        {isLoggedIn ? "My Account" : "Guest User"}
                       </Text>
                       <Text
                         fontSize="xs"
@@ -206,7 +322,6 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
                       </Text>
                     </Box>
 
-                    {/* Modal Body / Links */}
                     <VStack gap={0} alignItems="stretch" py={2}>
                       {isLoggedIn && (
                         <HStack
@@ -278,8 +393,7 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
         </Box>
       </Box>
 
-      {/* MOBILE BOTTOM NAV (Hidden on Desktop)      */}
-
+      {/* MOBILE BOTTOM NAV */}
       <Box
         display={{ base: "block", md: "none" }}
         position="fixed"
@@ -307,27 +421,32 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
               Home
             </Text>
           </VStack>
-
-          <VStack gap={1} cursor="pointer" color="yellow.500">
+          <VStack
+            gap={1}
+            cursor="pointer"
+            onClick={() => onNavigate("catalog")}
+            color="yellow.500"
+          >
             <LayoutGrid size={20} />
             <Text fontSize="xs" fontWeight="bold">
               Catalog
             </Text>
           </VStack>
-
           <VStack
             gap={1}
             cursor="pointer"
-            onClick={() => onNavigate("favorites")}
+            onClick={() => handleRestrictedAction("favorites")}
             color="gray.500"
             _dark={{ color: "gray.400" }}
           >
-            <Heart size={20} />
+            <Box position="relative">
+              <Heart size={20} />
+              <NotificationBadge count={favoriteCount} />
+            </Box>
             <Text fontSize="xs" fontWeight="medium">
               Saved
             </Text>
           </VStack>
-
           <VStack
             gap={1}
             cursor="pointer"
@@ -335,16 +454,14 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
             color="gray.500"
             _dark={{ color: "gray.400" }}
           >
-            <ShoppingBag size={20} />
-            <Text
-              fontSize="xs"
-              fontWeight="medium"
-              onClick={() => onNavigate("cart")}
-            >
+            <Box position="relative">
+              <ShoppingBag size={20} />
+              <NotificationBadge count={cartCount} />
+            </Box>
+            <Text fontSize="xs" fontWeight="medium">
               Cart
             </Text>
           </VStack>
-
           <VStack
             gap={1}
             cursor="pointer"
@@ -352,7 +469,7 @@ const Nav = ({ onNavigate, isLoggedIn, handleRestrictedAction }) => {
             color="gray.500"
             _dark={{ color: "gray.400" }}
           >
-            <User size={20} />
+            {isLoggedIn ? <LogOut size={20} /> : <User size={20} />}
             <Text fontSize="xs" fontWeight="medium">
               {isLoggedIn ? "Logout" : "Sign In"}
             </Text>
