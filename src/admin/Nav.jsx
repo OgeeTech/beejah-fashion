@@ -15,7 +15,6 @@ const AdminNav = ({
   isMobileMenuOpen,
   setIsMobileMenuOpen,
 }) => {
-  // Helper to handle tab switching and auto-close on mobile
   const handleTabSwitch = (tabName) => {
     setActiveTab(tabName);
     setIsMobileMenuOpen(false);

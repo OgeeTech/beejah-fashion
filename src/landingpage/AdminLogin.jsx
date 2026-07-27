@@ -36,7 +36,6 @@ const AdminLogin = ({ onNavigate }) => {
     setIsLoading(true);
 
     try {
-      // 1. Authenticate the user with Firebase Auth
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -44,14 +43,12 @@ const AdminLogin = ({ onNavigate }) => {
       );
       const user = userCredential.user;
 
-      // 2. Fetch their user profile from Firestore to check their role
       const userDocRef = doc(db, "users", user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
       if (userDocSnap.exists()) {
         const userData = userDocSnap.data();
 
-        // 3. Verify Admin Role
         if (userData.role === "Admin") {
           toaster.create({
             title: "Authorized",
@@ -62,10 +59,9 @@ const AdminLogin = ({ onNavigate }) => {
 
           setEmail("");
           setPassword("");
-          // Send them to the actual protected admin dashboard
+
           onNavigate("admin");
         } else {
-          // If they aren't an admin, force log them out immediately
           await signOut(auth);
           toaster.create({
             title: "Access Denied",
@@ -100,7 +96,7 @@ const AdminLogin = ({ onNavigate }) => {
       display="flex"
       alignItems="center"
       justifyContent="center"
-      bg="gray.900" // Darker default background to distinguish from regular sign in
+      bg="gray.900"
       _dark={{ bg: "gray.950" }}
       py={12}
       px={4}

@@ -11,7 +11,7 @@ import {
 import { Users as UsersIcon } from "lucide-react";
 
 // --- FIREBASE IMPORTS ---
-import { db } from "../firebase"; // Adjust this path if necessary!
+import { db } from "../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 
 const Users = () => {
@@ -22,8 +22,6 @@ const Users = () => {
     // Reference the 'users' collection in Firestore
     const usersCollectionRef = collection(db, "users");
 
-    // onSnapshot listens to the database in real-time.
-    // Anytime a new user registers, this updates automatically!
     const unsubscribe = onSnapshot(
       usersCollectionRef,
       (snapshot) => {
@@ -41,7 +39,7 @@ const Users = () => {
       },
     );
 
-    // Cleanup the listener when the component unmounts
+    // Cleanup the listener when the component unmount
     return () => unsubscribe();
   }, []);
 

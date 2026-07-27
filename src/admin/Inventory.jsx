@@ -51,7 +51,7 @@ const Inventory = () => {
     name: "",
     price: "",
     category: "",
-    description: "", // <-- NEW: Description field added to state
+    description: "",
     image: "",
     colors: [],
   });
@@ -138,7 +138,7 @@ const Inventory = () => {
         name: productForm.name,
         price: Number(productForm.price),
         category: productForm.category,
-        description: productForm.description, // <-- NEW: Save description to Firebase
+        description: productForm.description,
         colors: productForm.colors,
         image: liveImageUrl,
       };
@@ -190,7 +190,7 @@ const Inventory = () => {
       name: product.name,
       price: product.price,
       category: product.category,
-      description: product.description || "", // <-- NEW: Load description when editing
+      description: product.description || "",
       image: product.image,
       colors: product.colors || [],
     });

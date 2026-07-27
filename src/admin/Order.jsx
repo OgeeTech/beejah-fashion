@@ -22,7 +22,7 @@ const Orders = () => {
 
   // --- SEARCH AND FILTER STATE ---
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterPhase, setFilterPhase] = useState("All"); // <-- NEW: Phase filter state
+  const [filterPhase, setFilterPhase] = useState("All");
 
   const statusFlow = [
     "Processing",
